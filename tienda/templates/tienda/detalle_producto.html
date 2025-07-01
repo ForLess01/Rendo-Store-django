@@ -88,10 +88,8 @@
                                         <span class="font-medium">{{ producto.stock }} unidades disponibles</span>
                                     </div>
                                     <div class="w-full bg-slate-200 rounded-full h-2">
-                                        {% with stock_percentage=producto.stock %}
-                                            {% widthratio stock_percentage 1 1 as percentage %}
-                                            <div class="bg-emerald-500 h-2 rounded-full" style="width: {% if percentage > 100 %}100%{% else %}{{ percentage }}%{% endif %}"></div>
-                                        {% endwith %}
+                                        {% widthratio producto.stock 10 100 as stock_percentage %}
+                                        <div class="bg-emerald-500 h-2 rounded-full" style="width: {% if stock_percentage > 100 %}100%{% else %}{{ stock_percentage }}%{% endif %}"></div>
                                     </div>
                                 </div>
                                 {% if producto.stock <= 5 %}
@@ -116,20 +114,12 @@
                             <!-- Selector de cantidad -->
                             <div class="flex items-center bg-white/50 backdrop-blur-sm rounded-full border border-slate-200 overflow-hidden">
                                 <button type="button" id="decrement" 
-                                        class="w-12 h-12 flex items-center justify-center text-slate-600 hover:bg-slate-100/50 transition-colors"
-                                        {% if producto.stock <= 1 %}disabled{% endif %}>
+                                        class="w-12 h-12 flex items-center justify-center text-slate-600 hover:bg-slate-100/50 transition-colors">
                                     <i class="fas fa-minus"></i>
                                 </button>
-                                <input type="number" 
-                                       name="cantidad" 
-                                       id="cantidad" 
-                                       value="1" 
-                                       min="1" 
-                                       max="{{ producto.stock }}" 
-                                       class="w-16 text-center bg-transparent border-0 focus:ring-0 text-slate-800 font-medium">
+                                <span id="cantidad" class="w-16 text-center text-slate-800 font-medium select-none">1</span>
                                 <button type="button" id="increment" 
-                                        class="w-12 h-12 flex items-center justify-center text-slate-600 hover:bg-slate-100/50 transition-colors"
-                                        {% if producto.stock <= 0 %}disabled{% endif %}>
+                                        class="w-12 h-12 flex items-center justify-center text-slate-600 hover:bg-slate-100/50 transition-colors">
                                     <i class="fas fa-plus"></i>
                                 </button>
                             </div>
@@ -139,7 +129,7 @@
                                 {% csrf_token %}
                                 <input type="hidden" name="cantidad" id="form-quantity" value="1">
                                 <button type="submit" 
-                                        class="w-full bg-gradient-to-r from-primary-500 to-primary-600 text-white px-6 py-4 rounded-xl hover:shadow-lg hover:shadow-primary-200 transition-all transform hover:-translate-y-0.5 flex items-center justify-center space-x-2"
+                                        class="add-to-cart-btn w-full bg-gradient-to-r from-primary-500 to-primary-600 text-white px-6 py-4 rounded-xl hover:shadow-lg hover:shadow-primary-200 transition-all transform hover:-translate-y-0.5 flex items-center justify-center space-x-2"
                                         {% if producto.stock <= 0 %}disabled{% endif %}>
                                     <i class="fas fa-shopping-cart"></i>
                                     <span>Añadir al carrito</span>
@@ -228,277 +218,260 @@
                             </ul>
                         </div>
                     </div>
+                </div>
             </div>
         </div>
     </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Elementos del DOM
-        const cantidadInput = document.getElementById('cantidad');
-        const incrementBtn = document.getElementById('increment');
-        const decrementBtn = document.getElementById('decrement');
-        const maxStock = {{ producto.stock|default:0 }};
+document.addEventListener('DOMContentLoaded', function() {
+    // Elementos del DOM
+    const cantidadSpan = document.getElementById('cantidad');
+    const incrementBtn = document.getElementById('increment');
+    const decrementBtn = document.getElementById('decrement');
+    const formQuantityInput = document.getElementById('form-quantity');
+    const stockRemaining = document.getElementById('stock-remaining');
+    const stockMessage = document.getElementById('stock-message');
+    const addToCartMessage = document.getElementById('add-to-cart-message');
+    
+    let maxStock = {{ producto.stock|default:0 }};
+    let currentQuantity = 1;
+    
+    console.log('Script cargado. Stock máximo:', maxStock);
+    
+    // Verificar que existen los elementos necesarios
+    if (!cantidadSpan || !incrementBtn || !decrementBtn || !formQuantityInput) {
+        console.error('No se encontraron todos los elementos necesarios');
+        return;
+    }
+    
+    // Función para actualizar la cantidad
+    function updateQuantity(newQuantity) {
+        // Validar límites
+        if (newQuantity < 1) newQuantity = 1;
+        if (newQuantity > maxStock) newQuantity = maxStock;
         
-        // Función para actualizar el valor del input y el formulario oculto
-        function updateQuantity(newValue) {
-            // Asegurarse de que el valor esté dentro de los límites
-            newValue = parseInt(newValue) || 1;
-            if (newValue < 1) newValue = 1;
-            if (newValue > maxStock) newValue = maxStock;
-            
-            // Actualizar el input visible
-            cantidadInput.value = newValue;
-            
-            // Actualizar el input oculto del formulario
-            const formQuantity = document.getElementById('form-quantity');
-            if (formQuantity) {
-                formQuantity.value = newValue;
-            }
-            
-            // Actualizar estado de los botones
-            updateButtonStates(newValue);
-            
-            // Actualizar mensaje de stock
-            updateStockMessage(newValue);
+        currentQuantity = newQuantity;
+        
+        // Actualizar UI
+        cantidadSpan.textContent = currentQuantity;
+        formQuantityInput.value = currentQuantity;
+        
+        // Actualizar estado de botones
+        updateButtonStates();
+        
+        // Actualizar mensaje de stock
+        updateStockMessage();
+        
+        console.log('Cantidad actualizada a:', currentQuantity);
+    }
+    
+    // Función para actualizar el estado de los botones
+    function updateButtonStates() {
+        // Botón de incrementar
+        if (currentQuantity >= maxStock) {
+            incrementBtn.disabled = true;
+            incrementBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            incrementBtn.classList.remove('hover:bg-slate-100/50');
+        } else {
+            incrementBtn.disabled = false;
+            incrementBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            incrementBtn.classList.add('hover:bg-slate-100/50');
         }
         
-        // Función para actualizar el estado de los botones
-        function updateButtonStates(currentValue) {
-            if (decrementBtn) {
-                decrementBtn.disabled = currentValue <= 1;
-                decrementBtn.classList.toggle('opacity-50', currentValue <= 1);
-                decrementBtn.classList.toggle('cursor-not-allowed', currentValue <= 1);
-            }
-            
-            if (incrementBtn) {
-                incrementBtn.disabled = currentValue >= maxStock;
-                incrementBtn.classList.toggle('opacity-50', currentValue >= maxStock);
-                incrementBtn.classList.toggle('cursor-not-allowed', currentValue >= maxStock);
-            }
+        // Botón de decrementar
+        if (currentQuantity <= 1) {
+            decrementBtn.disabled = true;
+            decrementBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            decrementBtn.classList.remove('hover:bg-slate-100/50');
+        } else {
+            decrementBtn.disabled = false;
+            decrementBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            decrementBtn.classList.add('hover:bg-slate-100/50');
+        }
+    }
+    
+    // Función para actualizar el mensaje de stock
+    function updateStockMessage() {
+        const remaining = maxStock - currentQuantity;
+        
+        if (stockRemaining) {
+            stockRemaining.textContent = remaining;
         }
         
-        // Manejar el botón de incrementar
-        if (incrementBtn) {
-            incrementBtn.addEventListener('click', function() {
-                let value = parseInt(cantidadInput.value) || 1;
-                if (value < maxStock) {
-                    updateQuantity(value + 1);
-                }
-            });
-        }
-        
-        // Manejar el botón de decrementar
-        if (decrementBtn) {
-            decrementBtn.addEventListener('click', function() {
-                let value = parseInt(cantidadInput.value) || 1;
-                if (value > 1) {
-                    updateQuantity(value - 1);
-                }
-            });
-        }
-        
-        // Manejar entrada manual
-        if (cantidadInput) {
-            cantidadInput.addEventListener('change', function() {
-                updateQuantity(this.value);
-            });
-            
-            // También actualizar en tiempo real mientras se escribe
-            cantidadInput.addEventListener('input', function() {
-                const value = parseInt(this.value) || 1;
-                if (value > 0) {
-                    updateQuantity(value);
-                }
-            });
-        }
-        
-        // Inicializar el estado de los botones
-        updateButtonStates(parseInt(cantidadInput.value) || 1);
-        
-        // Función para actualizar el mensaje de stock
-        function updateStockMessage(currentValue) {
-            const remaining = maxStock - currentValue;
-            const stockMessage = document.getElementById('stock-message');
-            
-            if (stockMessage) {
-                if (remaining <= 5 && remaining > 0) {
-                    stockMessage.innerHTML = `
-                        <i class="fas fa-exclamation-circle mr-1.5"></i>
-                        ¡Solo quedan ${remaining} unidades!
-                    `;
-                    stockMessage.className = 'text-sm text-rose-600 font-medium flex items-center mt-2';
-                    stockMessage.classList.remove('hidden');
-                } else if (remaining === 0) {
-                    stockMessage.innerHTML = `
-                        <i class="fas fa-exclamation-circle mr-1.5"></i>
-                        ¡Última unidad disponible!
-                    `;
-                    stockMessage.className = 'text-sm text-rose-600 font-medium flex items-center mt-2';
-                    stockMessage.classList.remove('hidden');
-                } else {
-                    stockMessage.classList.add('hidden');
-                }
+        if (stockMessage) {
+            if (remaining <= 5 && remaining > 0) {
+                stockMessage.classList.remove('hidden');
+                stockMessage.innerHTML = `
+                    <i class="fas fa-exclamation-circle mr-1.5"></i>
+                    ¡Solo quedan ${remaining} ${remaining === 1 ? 'unidad' : 'unidades'}!
+                `;
+            } else if (remaining === 0) {
+                stockMessage.classList.remove('hidden');
+                stockMessage.innerHTML = `
+                    <i class="fas fa-times-circle mr-1.5"></i>
+                    ¡Producto agotado!
+                `;
+            } else {
+                stockMessage.classList.add('hidden');
             }
         }
-        
-        // Actualizar mensaje de stock y controles
-        function updateStockMessage(currentValue = 1) {
-            const remaining = maxStock - currentValue;
-            
-            // Actualizar contador de stock restante
-            if (stockRemaining) {
-                stockRemaining.textContent = remaining;
-            }
-            
-            // Actualizar estado de los botones
-            if (incrementBtn) {
-                incrementBtn.disabled = currentValue >= maxStock;
-            }
-            if (decrementBtn) {
-                decrementBtn.disabled = currentValue <= 1;
-            }
-            
-            // Actualizar mensaje de stock bajo
-            if (stockMessage) {
-                if (remaining <= 5 && remaining > 0) {
-                    stockMessage.textContent = `¡Solo quedan ${remaining} unidades!`;
-                    stockMessage.className = 'text-sm text-rose-600 font-medium flex items-center mt-2';
-                    stockMessage.innerHTML = `<i class="fas fa-exclamation-circle mr-1.5"></i> ¡Solo quedan ${remaining} unidades!`;
-                    stockMessage.classList.remove('hidden');
-                } else if (remaining === 0) {
-                    stockMessage.innerHTML = '<i class="fas fa-exclamation-circle mr-1.5"></i> ¡Última unidad disponible!';
-                    stockMessage.className = 'text-sm text-rose-600 font-medium flex items-center mt-2';
-                    stockMessage.classList.remove('hidden');
-                } else {
-                    stockMessage.classList.add('hidden');
-                }
-            }
-            
-            // Actualizar cantidad en el formulario oculto
-            const formQuantity = document.getElementById('form-quantity');
-            if (formQuantity) {
-                formQuantity.value = currentValue;
-            }
-        }
-        
-        // Manejar envío del formulario con AJAX
-        const addToCartForm = document.getElementById('add-to-cart-form');
-        if (addToCartForm) {
-            addToCartForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                const formData = new FormData(this);
-                const submitButton = this.querySelector('button[type="submit"]');
-                const originalButtonText = submitButton.innerHTML;
-                
-                // Mostrar estado de carga
-                submitButton.disabled = true;
-                submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Añadiendo...';
-                
-                // Crear un objeto FormData con los datos del formulario
-                const formData = new FormData();
-                formData.append('cantidad', cantidadInput.value);
-                formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
-                
-                fetch('{% url "tienda:agregar_al_carrito" producto.id %}', {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Mostrar mensaje de éxito
-                        const messageDiv = document.getElementById('add-to-cart-message');
-                        if (messageDiv) {
-                            messageDiv.classList.remove('hidden');
-                            messageDiv.classList.add('flex');
-                            
-                            // Actualizar contador del carrito en el encabezado
-                            const cartCount = document.querySelector('.cart-count');
-                            if (cartCount) {
-                                cartCount.textContent = data.cart_count;
-                                cartCount.classList.remove('hidden');
-                                cartCount.classList.add('flex');
-                                
-                                // Animación del ícono del carrito
-                                cartCount.classList.add('animate-bounce');
-                                setTimeout(() => {
-                                    cartCount.classList.remove('animate-bounce');
-                                }, 1000);
-                            }
-                            
-                            // Ocultar mensaje después de 3 segundos
-                            setTimeout(() => {
-                                messageDiv.classList.add('hidden');
-                                messageDiv.classList.remove('flex');
-                            }, 3000);
-                            
-                            // Actualizar el stock mostrado
-                            if (data.stock_actualizado !== undefined) {
-                                maxStock = data.stock_actualizado;
-                                updateStockMessage(parseInt(cantidadInput.value));
-                            }
-                        }
-                    } else {
-                        // Mostrar mensaje de error
-                        console.error('Error al agregar al carrito:', data.message);
-                        const messageDiv = document.getElementById('add-to-cart-message');
-                        if (messageDiv) {
-                            messageDiv.innerHTML = `
-                                <div class="flex items-center">
-                                    <i class="fas fa-exclamation-circle text-red-500 mr-2"></i>
-                                    <span>${data.message || 'Error al agregar al carrito'}</span>
-                                </div>
-                            `;
-                            messageDiv.classList.remove('hidden', 'bg-emerald-50', 'text-emerald-700');
-                            messageDiv.classList.add('flex', 'bg-red-50', 'text-red-700');
-                            
-                            setTimeout(() => {
-                                messageDiv.classList.add('hidden');
-                                messageDiv.classList.remove('flex');
-                                messageDiv.classList.remove('bg-red-50', 'text-red-700');
-                                messageDiv.classList.add('bg-emerald-50', 'text-emerald-700');
-                            }, 5000);
-                        }
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    const messageDiv = document.getElementById('add-to-cart-message') || document.createElement('div');
-                    messageDiv.innerHTML = `
-                        <div class="flex items-center">
-                            <i class="fas fa-exclamation-circle text-red-500 mr-2"></i>
-                            <span>Error de conexión. Por favor, inténtalo de nuevo.</span>
-                        </div>
-                    `;
-                    messageDiv.classList.remove('hidden', 'bg-emerald-50', 'text-emerald-700');
-                    messageDiv.classList.add('flex', 'bg-red-50', 'text-red-700');
-                    
-                    setTimeout(() => {
-                        messageDiv.classList.add('hidden');
-                        messageDiv.classList.remove('flex');
-                        messageDiv.classList.remove('bg-red-50', 'text-red-700');
-                        messageDiv.classList.add('bg-emerald-50', 'text-emerald-700');
-                    }, 5000);
-                })
-                .finally(() => {
-                    submitButton.disabled = false;
-                    submitButton.innerHTML = originalButtonText;
-                });
-            });
-        }
+    }
+    
+    // Event listeners para los botones
+    incrementBtn.addEventListener('click', function() {
+        console.log('Botón + clickeado');
+        updateQuantity(currentQuantity + 1);
     });
     
-    // Toast notification function
+    decrementBtn.addEventListener('click', function() {
+        console.log('Botón - clickeado');
+        updateQuantity(currentQuantity - 1);
+    });
+    
+    // Inicializar estado
+    updateButtonStates();
+    updateStockMessage();
+    
+    // Manejar envío del formulario
+    const addToCartFormElement = document.getElementById('add-to-cart-form');
+    if (addToCartFormElement) {
+        addToCartFormElement.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const submitButton = this.querySelector('button[type="submit"]');
+            const originalButtonText = submitButton.innerHTML;
+            
+            // Mostrar estado de carga
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Añadiendo...';
+            
+            // Asegurar que la cantidad sea correcta
+            formData.set('cantidad', currentQuantity);
+            
+            console.log('Enviando al carrito - Cantidad:', currentQuantity);
+            
+            // Reemplaza la sección del fetch en tu código existente con esta versión corregida:
+
+            fetch(this.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('Producto añadido:', data);
+                    
+                    // Mostrar mensaje de éxito
+                    if (addToCartMessage) {
+                        addToCartMessage.classList.remove('hidden');
+                        
+                        // Ocultar mensaje después de 3 segundos
+                        setTimeout(() => {
+                            addToCartMessage.classList.add('hidden');
+                        }, 3000);
+                    }
+                    
+                    // SECCIÓN CORREGIDA: Actualizar contador del carrito
+                    // Buscar el contador con múltiples selectores posibles
+                    const cartCounters = [
+                        document.querySelector('.cart-count'),
+                        document.querySelector('#cart-count'),
+                        document.querySelector('[data-cart-count]'),
+                        document.querySelector('.carrito-count'),
+                        document.querySelector('.badge'), // Si usas badge para el contador
+                        document.querySelector('.cart-badge'),
+                        // Agrega aquí otros selectores que puedas estar usando
+                    ].filter(el => el !== null); // Filtrar elementos que existen
+                    
+                    console.log('Contadores encontrados:', cartCounters.length);
+                    
+                    // Actualizar todos los contadores encontrados
+                    cartCounters.forEach(cartCount => {
+                        if (data.cart_count !== undefined) {
+                            // Usar el valor que viene del servidor
+                            cartCount.textContent = data.cart_count;
+                        } else if (data.total_items !== undefined) {
+                            // Alternativa si el servidor envía total_items
+                            cartCount.textContent = data.total_items;
+                        } else {
+                            // Fallback: incrementar el valor actual
+                            const currentCount = parseInt(cartCount.textContent) || 0;
+                            cartCount.textContent = currentCount + currentQuantity;
+                        }
+                        
+                        // Mostrar el contador si estaba oculto
+                        cartCount.classList.remove('hidden');
+                        cartCount.style.display = '';
+                        
+                        // Animación mejorada
+                        cartCount.classList.add('animate-bounce');
+                        
+                        // Efecto de escala para mayor visibilidad
+                        cartCount.style.transform = 'scale(1.3)';
+                        cartCount.style.transition = 'transform 0.3s ease';
+                        
+                        setTimeout(() => {
+                            cartCount.classList.remove('animate-bounce');
+                            cartCount.style.transform = 'scale(1)';
+                        }, 600);
+                    });
+                    
+                    // Si no se encontró ningún contador, intentar crear uno o actualizar toda la página
+                    if (cartCounters.length === 0) {
+                        console.warn('No se encontró contador del carrito. Selectores comunes no funcionaron.');
+                        
+                        // Opcional: recargar la página como último recurso
+                        // window.location.reload();
+                        
+                        // O mostrar un mensaje al usuario
+                        showToast('Producto añadido al carrito correctamente', 'success');
+                    }
+                    
+                    // Actualizar stock si viene en la respuesta
+                    if (data.stock_actualizado !== undefined) {
+                        maxStock = data.stock_actualizado;
+                        updateStockMessage();
+                        updateButtonStates();
+                    }
+                    
+                    // Disparar evento personalizado para otros scripts que puedan estar escuchando
+                    window.dispatchEvent(new CustomEvent('cartUpdated', {
+                        detail: {
+                            productId: {{ producto.id }},
+                            quantity: currentQuantity,
+                            totalItems: data.cart_count || data.total_items
+                        }
+                    }));
+                    
+                } else {
+                    console.error('Error al añadir al carrito:', data.message);
+                    showToast(data.message || 'Error al añadir al carrito', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('Error de conexión. Por favor, inténtalo de nuevo.', 'error');
+            })
+            .finally(() => {
+                // Restaurar botón
+                submitButton.disabled = false;
+                submitButton.innerHTML = originalButtonText;
+            });
+        });
+    }
+    
+    // Función para mostrar notificaciones toast
     function showToast(message, type = 'info') {
         const toast = document.createElement('div');
-        toast.className = `fixed bottom-4 right-4 px-6 py-3 rounded-md shadow-lg text-white ${
+        toast.className = `fixed bottom-4 right-4 px-6 py-3 rounded-md shadow-lg text-white z-50 ${
             type === 'error' ? 'bg-red-500' : 
             type === 'success' ? 'bg-green-500' : 'bg-blue-500'
         }`;
@@ -510,5 +483,6 @@
             toast.remove();
         }, 3000);
     }
+});
 </script>
 {% endblock %}
