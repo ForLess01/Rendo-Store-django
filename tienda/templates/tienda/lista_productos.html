@@ -1,0 +1,68 @@
+{% extends 'tienda/base.html' %}
+
+{% block title %}Productos - Mi Tienda{% endblock %}
+
+{% block content %}
+    <h1 class="text-3xl font-bold mb-8">Nuestros Productos</h1>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {% for producto in productos %}
+            <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
+                {% with image_url=producto.get_image_url %}
+                    {% if image_url %}
+                        <img src="{{ image_url }}" alt="{{ producto.nombre }}" class="w-full h-64 object-cover">
+                    {% else %}
+                        <div class="w-full h-64 bg-gray-200 flex items-center justify-center">
+                            <span class="text-gray-500">Sin imagen</span>
+                        </div>
+                    {% endif %}
+                {% endwith %}
+                
+                <div class="p-6">
+                    <h2 class="text-xl font-semibold mb-2">{{ producto.nombre }}</h2>
+                    <p class="text-gray-600 mb-4 line-clamp-2">{{ producto.descripcion|truncatewords:20 }}</p>
+                    <div class="flex justify-between items-center">
+                        <span class="text-2xl font-bold text-blue-600">S/ {{ producto.precio }}</span>
+                        <a href="{% url 'tienda:detalle_producto' producto.pk %}" 
+                           class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors">
+                            Ver Detalles
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="col-span-full text-center py-12">
+                <p class="text-xl text-gray-600">No se encontraron productos.</p>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- Paginación -->
+    {% if is_paginated %}
+        <div class="mt-8 flex justify-center">
+            <div class="flex space-x-2">
+                {% if page_obj.has_previous %}
+                    <a href="?page=1" class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">
+                        &laquo; Primera
+                    </a>
+                    <a href="?page={{ page_obj.previous_page_number }}" class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">
+                        Anterior
+                    </a>
+                {% endif %}
+
+                <span class="px-4 py-2 bg-blue-600 text-white rounded">
+                    Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                </span>
+
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}" class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">
+                        Siguiente
+                    </a>
+                    <a href="?page={{ page_obj.paginator.num_pages }}" class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">
+                        Última &raquo;
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}

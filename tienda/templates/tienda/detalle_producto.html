@@ -1,0 +1,272 @@
+{% extends 'tienda/base.html' %}
+{% load static %}
+
+{% block title %}{{ producto.nombre }} - Mi Tienda{% endblock %}
+
+{% block content %}
+    <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+        <div class="md:flex">
+            <div class="md:w-1/2">
+                {% with image_url=producto.get_image_url %}
+                    {% if image_url %}
+                        <img src="{{ image_url }}" alt="{{ producto.nombre }}" class="w-full h-auto">
+                    {% else %}
+                        <div class="w-full h-96 bg-gray-200 flex items-center justify-center">
+                            <span class="text-gray-500 text-xl">Imagen no disponible</span>
+                        </div>
+                    {% endif %}
+                {% endwith %}
+            </div>
+            <div class="p-8 md:w-1/2">
+                <h1 class="text-3xl font-bold mb-2">{{ producto.nombre }}</h1>
+                <p class="text-gray-600 text-2xl font-semibold mb-6">S/ {{ producto.precio }}</p>
+                
+                <div class="mb-6">
+                    <h2 class="text-lg font-semibold mb-2">Descripción</h2>
+                    <p class="text-gray-700">{{ producto.descripcion|linebreaksbr }}</p>
+                </div>
+                
+                <div class="mb-6">
+                    <div class="space-y-2 mb-4">
+                        <div class="flex items-center">
+                            <span class="text-gray-700 mr-2">Disponibilidad:</span>
+                            {% if producto.disponible and producto.stock > 0 %}
+                                <span class="text-green-600 font-semibold">En stock</span>
+                                <span class="stock-display ml-2 text-sm text-gray-500">({{ producto.stock }} disponibles)</span>
+                            {% else %}
+                                <span class="text-red-600 font-semibold">Agotado</span>
+                            {% endif %}
+                        </div>
+                        {% if producto.disponible and producto.stock > 0 %}
+                        <div class="text-sm text-gray-600">
+                            <span id="stock-message">
+                                {% if producto.stock <= 5 %}
+                                    ¡Solo quedan {{ producto.stock }} unidades!
+                                {% endif %}
+                            </span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    {% if producto.stock > 0 %}
+                        <form id="add-to-cart-form" action="{% url 'tienda:agregar_al_carrito' producto.id %}" method="post" class="space-y-4">
+                            {% csrf_token %}
+                            <div class="flex items-start space-x-4">
+                                <div class="w-32">
+                                    <label for="cantidad" class="block text-sm font-medium text-gray-700 mb-1">Cantidad</label>
+                                    <div class="flex border border-gray-300 rounded-md overflow-hidden">
+                                        <button type="button" id="decrement" class="px-3 py-2 bg-gray-100 hover:bg-gray-200" 
+                                                {% if producto.stock <= 0 %}disabled{% endif %}>
+                                            <i class="fas fa-minus"></i>
+                                        </button>
+                                        <input type="number" name="cantidad" id="cantidad" value="1" min="1" max="{{ producto.stock }}" 
+                                               class="w-full text-center px-2 py-2 focus:outline-none" 
+                                               {% if producto.stock <= 0 %}disabled{% endif %}>
+                                        <button type="button" id="increment" class="px-3 py-2 bg-gray-100 hover:bg-gray-200"
+                                                {% if producto.stock <= 0 %}disabled{% endif %}>
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                    </div>
+                                    <p id="max-stock-message" class="text-xs text-gray-500 mt-1">
+                                        Máximo: {{ producto.stock }} unidad{{ producto.stock|pluralize:'es' }}
+                                    </p>
+                                </div>
+                                <div class="flex items-end">
+                                    <button type="submit" class="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors disabled:bg-blue-400 disabled:cursor-not-allowed"
+                                            {% if producto.stock <= 0 %}disabled{% endif %}>
+                                        <i class="fas fa-cart-plus mr-2"></i> Añadir al carrito
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                        <div id="add-to-cart-message" class="mt-2 text-green-600 hidden"></div>
+                    {% else %}
+                        <button disabled class="bg-gray-400 text-white px-6 py-3 rounded-md cursor-not-allowed">
+                            Producto agotado
+                        </button>
+                    {% endif %}
+                </div>
+                
+                <div class="border-t border-gray-200 pt-4">
+                    <a href="{% url 'tienda:lista_productos' %}" class="text-blue-600 hover:underline">
+                        <i class="fas fa-arrow-left mr-1"></i> Volver a la tienda
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const cantidadInput = document.getElementById('cantidad');
+        const incrementBtn = document.getElementById('increment');
+        const decrementBtn = document.getElementById('decrement');
+        const stockDisplay = document.querySelector('.stock-display');
+        let maxStock = {{ producto.stock|default:0 }};
+        
+        // Update stock message on page load
+        updateStockMessage();
+        
+        // Handle increment button
+        if (incrementBtn) {
+            incrementBtn.addEventListener('click', function() {
+                let value = parseInt(cantidadInput.value) || 0;
+                if (value < maxStock) {
+                    cantidadInput.value = value + 1;
+                    updateStockMessage();
+                }
+            });
+        }
+        
+        // Handle decrement button
+        if (decrementBtn) {
+            decrementBtn.addEventListener('click', function() {
+                let value = parseInt(cantidadInput.value) || 0;
+                if (value > 1) {
+                    cantidadInput.value = value - 1;
+                    updateStockMessage();
+                }
+            });
+        }
+        
+        // Handle manual input
+        if (cantidadInput) {
+            cantidadInput.addEventListener('change', function() {
+                let value = parseInt(this.value) || 1;
+                if (value < 1) value = 1;
+                if (value > maxStock) value = maxStock;
+                this.value = value;
+                updateStockMessage();
+            });
+        }
+        
+        // Update stock message based on current quantity
+        function updateStockMessage() {
+            const currentQty = parseInt(cantidadInput.value) || 0;
+            const remaining = maxStock - currentQty;
+            const stockMessage = document.getElementById('stock-message');
+            
+            if (stockMessage) {
+                if (remaining <= 5 && remaining > 0) {
+                    stockMessage.textContent = `¡Solo quedan ${maxStock} unidades!`;
+                    stockMessage.className = 'text-yellow-600 font-medium';
+                } else if (remaining === 0) {
+                    stockMessage.textContent = '¡Última unidad disponible!';
+                    stockMessage.className = 'text-red-600 font-medium';
+                } else {
+                    stockMessage.textContent = '';
+                }
+            }
+            
+            // Disable/enable buttons based on stock
+            if (incrementBtn) {
+                incrementBtn.disabled = currentQty >= maxStock;
+                incrementBtn.className = `px-3 py-2 ${currentQty >= maxStock ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-gray-100 hover:bg-gray-200'}`;
+            }
+            if (decrementBtn) {
+                decrementBtn.disabled = currentQty <= 1;
+                decrementBtn.className = `px-3 py-2 ${currentQty <= 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-gray-100 hover:bg-gray-200'}`;
+            }
+        }
+        
+        // Function to update stock display
+        function updateStockDisplay() {
+            if (stockDisplay) {
+                stockDisplay.textContent = `(${maxStock} disponibles)`;
+                
+                // Update max attribute on quantity input
+                if (cantidadInput) {
+                    cantidadInput.max = maxStock;
+                    
+                    // Adjust quantity if it exceeds new stock
+                    const currentQty = parseInt(cantidadInput.value) || 0;
+                    if (currentQty > maxStock) {
+                        cantidadInput.value = maxStock;
+                    }
+                    
+                    // Update buttons state
+                    updateStockMessage();
+                }
+                
+                // Update max stock message
+                const maxStockMessage = document.getElementById('max-stock-message');
+                if (maxStockMessage) {
+                    maxStockMessage.textContent = `Máximo: ${maxStock} unidad${maxStock !== 1 ? 'es' : ''}`;
+                }
+            }
+        }
+        
+        // Submit form via AJAX
+        const form = document.getElementById('add-to-cart-form');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const button = this.querySelector('button[type="submit"]');
+                const cantidad = parseInt(cantidadInput.value) || 1;
+                
+                // Disable form during submission
+                button.disabled = true;
+                
+                fetch(this.action, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: `cantidad=${cantidad}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Update local stock
+                        maxStock -= cantidad;
+                        updateStockDisplay();
+                        
+                        // Show success message
+                        showToast('Producto añadido al carrito', 'success');
+                        
+                        // Update cart count
+                        if (typeof updateCartCount === 'function') {
+                            updateCartCount(data.cart_count);
+                        }
+                        
+                        // Reset quantity to 1
+                        if (cantidadInput) {
+                            cantidadInput.value = 1;
+                            updateStockMessage();
+                        }
+                    } else {
+                        throw new Error(data.error || 'Error al agregar al carrito');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showToast(error.message || 'Error al agregar al carrito', 'error');
+                })
+                .finally(() => {
+                    button.disabled = false;
+                });
+            });
+        }
+    });
+    
+    // Toast notification function
+    function showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.className = `fixed bottom-4 right-4 px-6 py-3 rounded-md shadow-lg text-white ${
+            type === 'error' ? 'bg-red-500' : 
+            type === 'success' ? 'bg-green-500' : 'bg-blue-500'
+        }`;
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        
+        // Auto-remove after 3 seconds
+        setTimeout(() => {
+            toast.remove();
+        }, 3000);
+    }
+</script>
+{% endblock %}

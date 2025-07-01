@@ -1,0 +1,89 @@
+{% extends 'tienda/base.html' %}
+{% load static %}
+
+{% block title %}Finalizar Compra - Mi Tienda{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold mb-8">Finalizar Compra</h1>
+        
+        <div class="bg-white rounded-lg shadow-md overflow-hidden mb-8">
+            <div class="p-6">
+                <h2 class="text-xl font-semibold mb-4">Resumen del Pedido</h2>
+                
+                <div class="divide-y divide-gray-200">
+                    {% for item in items %}
+                    <div class="py-4 flex justify-between items-center">
+                        <div class="flex items-center space-x-4">
+                            {% with image_url=item.producto.get_image_url %}
+                                {% if image_url %}
+                                    <img src="{{ image_url }}" alt="{{ item.producto.nombre }}" class="w-16 h-16 object-cover rounded">
+                                {% else %}
+                                    <div class="w-16 h-16 bg-gray-200 rounded flex items-center justify-center">
+                                        <i class="fas fa-image text-gray-400"></i>
+                                    </div>
+                                {% endif %}
+                            {% endwith %}
+                            <div>
+                                <h3 class="font-medium">{{ item.producto.nombre }}</h3>
+                                <p class="text-gray-600 text-sm">Cantidad: {{ item.cantidad }}</p>
+                            </div>
+                        </div>
+                        <span class="font-semibold">S/ {{ item.subtotal|floatformat:2 }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <div class="border-t border-gray-200 mt-6 pt-6">
+                    <div class="flex justify-between mb-2">
+                        <span>Subtotal:</span>
+                        <span>S/ {{ total|floatformat:2 }}</span>
+                    </div>
+                    <div class="flex justify-between mb-2">
+                        <span>Envío:</span>
+                        <span>Gratis</span>
+                    </div>
+                    <div class="flex justify-between text-lg font-bold mt-4 pt-4 border-t border-gray-200">
+                        <span>Total:</span>
+                        <span>S/ {{ total|floatformat:2 }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+            <div class="p-6">
+                <h2 class="text-xl font-semibold mb-4">Información de Pago</h2>
+                <p class="text-gray-600 mb-6">Estamos trabajando en nuestro sistema de pagos. Pronto podrás completar tu compra de forma segura.</p>
+                
+                <form method="post" class="space-y-4">
+                    {% csrf_token %}
+                    <!-- Add your payment form fields here -->
+                    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-info-circle text-yellow-500"></i>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm text-yellow-700">
+                                    Esta es una demostración. No se procesarán pagos reales.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-end space-x-4">
+                        <a href="{% url 'tienda:carrito' %}" class="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+                            Volver al carrito
+                        </a>
+                        <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                            Confirmar pedido
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

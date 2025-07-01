@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Tienda Online{% endblock %}</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="bg-gray-100">
+    <!-- Barra de navegación -->
+    <nav class="bg-blue-600 text-white shadow-lg">
+        <div class="container mx-auto px-6 py-3">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <a href="{% url 'tienda:lista_productos' %}" class="text-xl font-bold">Rendo Store</a>
+                </div>
+                <div class="flex items-center space-x-4 relative">
+                    <div class="relative">
+                        <form id="search-form" action="{% url 'tienda:buscar_productos' %}" method="get" class="flex">
+                            <input type="text" 
+                                   id="search-input" 
+                                   name="q" 
+                                   placeholder="Buscar productos..." 
+                                   class="px-4 py-2 rounded-l text-gray-800 focus:outline-none w-64"
+                                   autocomplete="off"
+                                   aria-label="Buscar productos">
+                            <button type="submit" class="bg-blue-700 px-4 py-2 rounded-r hover:bg-blue-800 focus:outline-none">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </form>
+                        <div id="search-results" class="hidden absolute z-50 w-full mt-1 bg-white rounded-md shadow-lg">
+                            <div class="py-1">
+                                <div class="px-4 py-2 text-gray-700 text-sm">
+                                    Escribe para buscar productos...
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <a href="{% url 'tienda:carrito' %}" class="relative">
+                        <i class="fas fa-shopping-cart text-2xl"></i>
+                        <span id="cart-count" class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                            {{ cart_count|default:0 }}
+                        </span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Mensajes -->
+    <div class="container mx-auto px-6 py-4">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="mb-4 p-4 rounded {% if message.tags == 'success' %}bg-green-100 text-green-700{% else %}bg-red-100 text-red-700{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+
+    <!-- Contenido principal -->
+    <main class="container mx-auto px-6 py-8">
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <!-- Pie de página -->
+    <footer class="bg-gray-800 text-white py-6 mt-12">
+        <div class="container mx-auto px-6 text-center">
+            <p>&copy; {% now "Y" %} Rendo Store. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script>
+        // Function to update the cart count
+        function updateCartCount(count) {
+            const cartCountElement = document.getElementById('cart-count');
+            if (cartCountElement) {
+                cartCountElement.textContent = count;
+                // Make sure it's visible if it was hidden
+                cartCountElement.style.display = 'flex';
+            }
+        }
+
+        // Search functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize cart count
+            const cartCountElement = document.getElementById('cart-count');
+            if (cartCountElement && cartCountElement.textContent.trim() !== '0') {
+                cartCountElement.style.display = 'flex';
+            }
+
+            // Search elements
+            const searchInput = document.getElementById('search-input');
+            const searchForm = document.getElementById('search-form');
+            const searchResults = document.getElementById('search-results');
+            let searchTimeout;
+
+            if (searchInput && searchResults) {
+                // Handle search input
+                searchInput.addEventListener('input', function(e) {
+                    clearTimeout(searchTimeout);
+                    const query = e.target.value.trim();
+                    
+                    if (query.length < 2) {
+                        if (query.length === 0) {
+                            searchResults.classList.add('hidden');
+                        } else {
+                            searchResults.innerHTML = `
+                                <div class="py-1">
+                                    <div class="px-4 py-2 text-gray-500 text-sm">
+                                        Escribe al menos 2 caracteres...
+                                    </div>
+                                </div>`;
+                            searchResults.classList.remove('hidden');
+                        }
+                        return;
+                    }
+
+                    searchTimeout = setTimeout(() => {
+                        fetch(`/buscar/?q=${encodeURIComponent(query)}`)
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.length > 0) {
+                                    let resultsHtml = '';
+                                    data.forEach(product => {
+                                        resultsHtml += `
+                                        <a href="${product.url}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center">
+                                            ${product.imagen ? 
+                                                `<img src="${product.imagen}" alt="${product.nombre}" class="w-10 h-10 object-cover mr-3">` : 
+                                                `<div class="w-10 h-10 bg-gray-200 flex items-center justify-center mr-3">
+                                                    <i class="fas fa-box text-gray-400"></i>
+                                                </div>`
+                                            }
+                                            <div>
+                                                <div class="font-medium">${product.nombre}</div>
+                                                <div class="text-blue-600">S/ ${product.precio}</div>
+                                            </div>
+                                        </a>`;
+                                    });
+                                    searchResults.innerHTML = resultsHtml;
+                                } else {
+                                    searchResults.innerHTML = `
+                                        <div class="py-1">
+                                            <div class="px-4 py-2 text-gray-500 text-sm">
+                                                No se encontraron productos.
+                                            </div>
+                                        </div>`;
+                                }
+                                searchResults.classList.remove('hidden');
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                                searchResults.classList.add('hidden');
+                            });
+                    }, 300); // 300ms debounce
+                });
+
+                // Hide results when clicking outside
+                document.addEventListener('click', function(e) {
+                    if (!searchForm.contains(e.target)) {
+                        searchResults.classList.add('hidden');
+                    }
+                });
+
+                // Prevent form submission if there are search results
+                searchForm.addEventListener('submit', function(e) {
+                    if (searchInput.value.trim().length > 0) {
+                        // Allow form submission
+                        return true;
+                    }
+                    e.preventDefault();
+                    return false;
+                });
+            }
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
