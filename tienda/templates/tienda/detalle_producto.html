@@ -1,97 +1,233 @@
 {% extends 'tienda/base.html' %}
 {% load static %}
 
-{% block title %}{{ producto.nombre }} - Mi Tienda{% endblock %}
+{% block title %}{{ producto.nombre }} - Rendo Store{% endblock %}
 
 {% block content %}
-    <div class="bg-white rounded-lg shadow-lg overflow-hidden">
-        <div class="md:flex">
-            <div class="md:w-1/2">
-                {% with image_url=producto.get_image_url %}
-                    {% if image_url %}
-                        <img src="{{ image_url }}" alt="{{ producto.nombre }}" class="w-full h-auto">
-                    {% else %}
-                        <div class="w-full h-96 bg-gray-200 flex items-center justify-center">
-                            <span class="text-gray-500 text-xl">Imagen no disponible</span>
-                        </div>
-                    {% endif %}
-                {% endwith %}
-            </div>
-            <div class="p-8 md:w-1/2">
-                <h1 class="text-3xl font-bold mb-2">{{ producto.nombre }}</h1>
-                <p class="text-gray-600 text-2xl font-semibold mb-6">S/ {{ producto.precio }}</p>
-                
-                <div class="mb-6">
-                    <h2 class="text-lg font-semibold mb-2">Descripción</h2>
-                    <p class="text-gray-700">{{ producto.descripcion|linebreaksbr }}</p>
+<div class="py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Back Button -->
+        <div class="mb-6">
+            <a href="{% url 'tienda:lista_productos' %}" class="inline-flex items-center text-primary-600 hover:text-primary-700 transition-colors group">
+                <i class="fas fa-arrow-left mr-2 group-hover:-translate-x-1 transition-transform"></i>
+                Volver a la tienda
+            </a>
+        </div>
+        
+        <!-- Product Detail Card -->
+        <div class="glass-card rounded-3xl overflow-hidden">
+            <div class="lg:flex">
+                <!-- Product Images -->
+                <div class="lg:w-1/2 p-6 md:p-8">
+                    <div class="relative bg-white/50 backdrop-blur-sm rounded-2xl overflow-hidden shadow-inner">
+                        {% with image_url=producto.get_image_url %}
+                            {% if image_url %}
+                                <img src="{{ image_url }}" 
+                                     alt="{{ producto.nombre }}" 
+                                     class="w-full h-auto max-h-[500px] object-contain p-8 transition-opacity duration-300"
+                                     id="main-product-image">
+                            {% else %}
+                                <div class="w-full h-96 flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 text-slate-300">
+                                    <i class="fas fa-box-open text-6xl"></i>
+                                </div>
+                            {% endif %}
+                        {% endwith %}
+                        
+                        <!-- Stock Badge -->
+                        {% if producto.disponible and producto.stock > 0 %}
+                            <div class="absolute top-4 right-4">
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-emerald-100 text-emerald-800">
+                                    <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span>
+                                    En stock
+                                </span>
+                            </div>
+                        {% else %}
+                            <div class="absolute top-4 right-4">
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-rose-100 text-rose-800">
+                                    <span class="w-2 h-2 rounded-full bg-rose-500 mr-2"></span>
+                                    Agotado
+                                </span>
+                            </div>
+                        {% endif %}
+                    </div>
                 </div>
                 
-                <div class="mb-6">
-                    <div class="space-y-2 mb-4">
-                        <div class="flex items-center">
-                            <span class="text-gray-700 mr-2">Disponibilidad:</span>
+                <!-- Product Info -->
+                <div class="lg:w-1/2 p-6 md:p-8 lg:pl-0">
+                    <!-- Product Header -->
+                    <div class="mb-6">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h1 class="text-3xl md:text-4xl font-bold text-slate-800 mb-2">{{ producto.nombre }}</h1>
+                                <div class="flex items-center space-x-2 mb-4">
+                                    <div class="flex text-amber-400">
+                                        {% for i in "12345" %}
+                                            <i class="fas fa-star{% if forloop.counter > 4.5 %}-half-alt{% endif %}"></i>
+                                        {% endfor %}
+                                    </div>
+                                    <span class="text-sm text-slate-500">(24 reseñas)</span>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-3xl font-bold text-primary-600">S/ {{ producto.precio|floatformat:2 }}</p>
+                                {% if producto.precio_anterior %}
+                                    <p class="text-sm text-slate-400 line-through">S/ {{ producto.precio_anterior|floatformat:2 }}</p>
+                                    <span class="inline-block mt-1 px-2 py-0.5 bg-rose-100 text-rose-800 text-xs font-semibold rounded-full">
+                                        -{{ producto.descuento_porcentaje|default:0 }}%
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Stock Status -->
+                        <div class="mt-4">
                             {% if producto.disponible and producto.stock > 0 %}
-                                <span class="text-green-600 font-semibold">En stock</span>
-                                <span class="stock-display ml-2 text-sm text-gray-500">({{ producto.stock }} disponibles)</span>
+                                <div class="mb-2">
+                                    <div class="flex justify-between text-sm text-slate-600 mb-1">
+                                        <span>Disponibilidad:</span>
+                                        <span class="font-medium">{{ producto.stock }} unidades disponibles</span>
+                                    </div>
+                                    <div class="w-full bg-slate-200 rounded-full h-2">
+                                        {% with stock_percentage=producto.stock %}
+                                            {% widthratio stock_percentage 1 1 as percentage %}
+                                            <div class="bg-emerald-500 h-2 rounded-full" style="width: {% if percentage > 100 %}100%{% else %}{{ percentage }}%{% endif %}"></div>
+                                        {% endwith %}
+                                    </div>
+                                </div>
+                                {% if producto.stock <= 5 %}
+                                <p id="stock-message" class="text-sm text-rose-600 font-medium flex items-center">
+                                    <i class="fas fa-exclamation-circle mr-1.5"></i>
+                                    ¡Solo quedan {{ producto.stock }} unidades!
+                                </p>
+                                {% endif %}
                             {% else %}
-                                <span class="text-red-600 font-semibold">Agotado</span>
+                                <p class="text-rose-600 font-medium flex items-center">
+                                    <i class="fas fa-times-circle mr-1.5"></i>
+                                    Producto agotado temporalmente
+                                </p>
                             {% endif %}
                         </div>
-                        {% if producto.disponible and producto.stock > 0 %}
-                        <div class="text-sm text-gray-600">
-                            <span id="stock-message">
-                                {% if producto.stock <= 5 %}
-                                    ¡Solo quedan {{ producto.stock }} unidades!
-                                {% endif %}
-                            </span>
-                        </div>
-                        {% endif %}
                     </div>
                     
                     {% if producto.stock > 0 %}
-                        <form id="add-to-cart-form" action="{% url 'tienda:agregar_al_carrito' producto.id %}" method="post" class="space-y-4">
-                            {% csrf_token %}
-                            <div class="flex items-start space-x-4">
-                                <div class="w-32">
-                                    <label for="cantidad" class="block text-sm font-medium text-gray-700 mb-1">Cantidad</label>
-                                    <div class="flex border border-gray-300 rounded-md overflow-hidden">
-                                        <button type="button" id="decrement" class="px-3 py-2 bg-gray-100 hover:bg-gray-200" 
-                                                {% if producto.stock <= 0 %}disabled{% endif %}>
-                                            <i class="fas fa-minus"></i>
-                                        </button>
-                                        <input type="number" name="cantidad" id="cantidad" value="1" min="1" max="{{ producto.stock }}" 
-                                               class="w-full text-center px-2 py-2 focus:outline-none" 
-                                               {% if producto.stock <= 0 %}disabled{% endif %}>
-                                        <button type="button" id="increment" class="px-3 py-2 bg-gray-100 hover:bg-gray-200"
-                                                {% if producto.stock <= 0 %}disabled{% endif %}>
-                                            <i class="fas fa-plus"></i>
-                                        </button>
-                                    </div>
-                                    <p id="max-stock-message" class="text-xs text-gray-500 mt-1">
-                                        Máximo: {{ producto.stock }} unidad{{ producto.stock|pluralize:'es' }}
-                                    </p>
-                                </div>
-                                <div class="flex items-end">
-                                    <button type="submit" class="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors disabled:bg-blue-400 disabled:cursor-not-allowed"
-                                            {% if producto.stock <= 0 %}disabled{% endif %}>
-                                        <i class="fas fa-cart-plus mr-2"></i> Añadir al carrito
-                                    </button>
-                                </div>
+                    <div class="glass-card p-6 rounded-2xl mb-8">
+                        <h3 class="text-lg font-semibold text-slate-800 mb-4">Selecciona la cantidad</h3>
+                        <div class="flex items-center space-x-4">
+                            <!-- Selector de cantidad -->
+                            <div class="flex items-center bg-white/50 backdrop-blur-sm rounded-full border border-slate-200 overflow-hidden">
+                                <button type="button" id="decrement" 
+                                        class="w-12 h-12 flex items-center justify-center text-slate-600 hover:bg-slate-100/50 transition-colors"
+                                        {% if producto.stock <= 1 %}disabled{% endif %}>
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                                <input type="number" 
+                                       name="cantidad" 
+                                       id="cantidad" 
+                                       value="1" 
+                                       min="1" 
+                                       max="{{ producto.stock }}" 
+                                       class="w-16 text-center bg-transparent border-0 focus:ring-0 text-slate-800 font-medium">
+                                <button type="button" id="increment" 
+                                        class="w-12 h-12 flex items-center justify-center text-slate-600 hover:bg-slate-100/50 transition-colors"
+                                        {% if producto.stock <= 0 %}disabled{% endif %}>
+                                    <i class="fas fa-plus"></i>
+                                </button>
                             </div>
-                        </form>
-                        <div id="add-to-cart-message" class="mt-2 text-green-600 hidden"></div>
+                            
+                            <!-- Botón de añadir al carrito -->
+                            <form id="add-to-cart-form" action="{% url 'tienda:agregar_al_carrito' producto.id %}" method="post" class="flex-1">
+                                {% csrf_token %}
+                                <input type="hidden" name="cantidad" id="form-quantity" value="1">
+                                <button type="submit" 
+                                        class="w-full bg-gradient-to-r from-primary-500 to-primary-600 text-white px-6 py-4 rounded-xl hover:shadow-lg hover:shadow-primary-200 transition-all transform hover:-translate-y-0.5 flex items-center justify-center space-x-2"
+                                        {% if producto.stock <= 0 %}disabled{% endif %}>
+                                    <i class="fas fa-shopping-cart"></i>
+                                    <span>Añadir al carrito</span>
+                                </button>
+                            </form>
+                        </div>
+                        
+                        <!-- Mensaje de stock -->
+                        <p id="max-stock-message" class="text-sm text-slate-500 mt-3">
+                            <i class="fas fa-box-open text-slate-400 mr-1"></i>
+                            <span id="stock-remaining">{{ producto.stock }}</span> unidad{{ producto.stock|pluralize:"es" }} disponible{{ producto.stock|pluralize }}
+                        </p>
+                        
+                        <!-- Mensaje de éxito al añadir al carrito -->
+                        <div id="add-to-cart-message" class="mt-4 p-3 rounded-lg bg-emerald-50 text-emerald-700 hidden">
+                            <div class="flex items-center">
+                                <i class="fas fa-check-circle text-emerald-500 mr-2"></i>
+                                <span>¡Producto añadido al carrito!</span>
+                            </div>
+                        </div>
+                    </div>
                     {% else %}
-                        <button disabled class="bg-gray-400 text-white px-6 py-3 rounded-md cursor-not-allowed">
-                            Producto agotado
-                        </button>
+                    <div class="glass-card p-6 rounded-2xl mb-8">
+                        <div class="text-center py-6">
+                            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-rose-100 text-rose-500 mb-4">
+                                <i class="fas fa-times-circle text-2xl"></i>
+                            </div>
+                            <h3 class="text-lg font-semibold text-slate-800 mb-2">Producto agotado</h3>
+                            <p class="text-slate-600 mb-4">Lo sentimos, este producto no está disponible en este momento.</p>
+                            <button type="button" 
+                                    class="px-6 py-3 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors inline-flex items-center"
+                                    disabled>
+                                <i class="fas fa-bell mr-2"></i>
+                                Notificarme cuando esté disponible
+                            </button>
+                        </div>
+                    </div>
                     {% endif %}
-                </div>
-                
-                <div class="border-t border-gray-200 pt-4">
-                    <a href="{% url 'tienda:lista_productos' %}" class="text-blue-600 hover:underline">
-                        <i class="fas fa-arrow-left mr-1"></i> Volver a la tienda
-                    </a>
-                </div>
+                    
+                    <!-- Sección de detalles adicionales -->
+                    <div class="glass-card p-6 rounded-2xl mb-6">
+                        <h3 class="text-lg font-semibold text-slate-800 mb-4">Detalles del producto</h3>
+                        <div class="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                                <p class="text-slate-500">Categoría</p>
+                                <p class="font-medium">{{ producto.categoria|default:"Sin categoría" }}</p>
+                            </div>
+                            <div>
+                                <p class="text-slate-500">Marca</p>
+                                <p class="font-medium">{{ producto.marca|default:"Sin marca" }}</p>
+                            </div>
+                            <div>
+                                <p class="text-slate-500">Código</p>
+                                <p class="font-mono">{{ producto.codigo|default:"N/A" }}</p>
+                            </div>
+                            <div>
+                                <p class="text-slate-500">Envío</p>
+                                <p class="font-medium text-emerald-600">Envío gratuito</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Sección de descripción -->
+                    <div class="glass-card p-6 rounded-2xl">
+                        <h3 class="text-lg font-semibold text-slate-800 mb-4">Descripción</h3>
+                        <div class="prose max-w-none text-slate-600">
+                            {{ producto.descripcion_larga|default:producto.descripcion|linebreaks }}
+                        </div>
+                        
+                        <!-- Características destacadas -->
+                        <div class="mt-6 pt-6 border-t border-slate-200">
+                            <h4 class="font-medium text-slate-800 mb-3">Características principales</h4>
+                            <ul class="space-y-2 text-sm">
+                                <li class="flex items-start">
+                                    <i class="fas fa-check-circle text-emerald-500 mt-0.5 mr-2"></i>
+                                    <span>Garantía de 1 año</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fas fa-check-circle text-emerald-500 mt-0.5 mr-2"></i>
+                                    <span>Envío a todo el país</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fas fa-check-circle text-emerald-500 mt-0.5 mr-2"></i>
+                                    <span>Devolución gratuita en 30 días</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
             </div>
         </div>
     </div>
@@ -100,154 +236,198 @@
 {% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Elementos del DOM
         const cantidadInput = document.getElementById('cantidad');
         const incrementBtn = document.getElementById('increment');
         const decrementBtn = document.getElementById('decrement');
-        const stockDisplay = document.querySelector('.stock-display');
-        let maxStock = {{ producto.stock|default:0 }};
+        const stockRemaining = document.getElementById('stock-remaining');
+        const maxStock = {{ producto.stock|default:0 }};
+        const stockMessage = document.getElementById('stock-message');
         
-        // Update stock message on page load
+        // Inicializar el mensaje de stock
         updateStockMessage();
         
-        // Handle increment button
+        // Manejar el botón de incrementar
         if (incrementBtn) {
             incrementBtn.addEventListener('click', function() {
-                let value = parseInt(cantidadInput.value) || 0;
+                let value = parseInt(cantidadInput.value) || 1;
                 if (value < maxStock) {
-                    cantidadInput.value = value + 1;
-                    updateStockMessage();
+                    value++;
+                    cantidadInput.value = value;
+                    updateStockMessage(value);
                 }
             });
         }
         
-        // Handle decrement button
+        // Manejar el botón de decrementar
         if (decrementBtn) {
             decrementBtn.addEventListener('click', function() {
-                let value = parseInt(cantidadInput.value) || 0;
+                let value = parseInt(cantidadInput.value) || 1;
                 if (value > 1) {
-                    cantidadInput.value = value - 1;
-                    updateStockMessage();
+                    value--;
+                    cantidadInput.value = value;
+                    updateStockMessage(value);
                 }
             });
         }
         
-        // Handle manual input
+        // Manejar entrada manual
         if (cantidadInput) {
             cantidadInput.addEventListener('change', function() {
                 let value = parseInt(this.value) || 1;
                 if (value < 1) value = 1;
                 if (value > maxStock) value = maxStock;
                 this.value = value;
-                updateStockMessage();
+                updateStockMessage(value);
             });
         }
         
-        // Update stock message based on current quantity
-        function updateStockMessage() {
-            const currentQty = parseInt(cantidadInput.value) || 0;
-            const remaining = maxStock - currentQty;
-            const stockMessage = document.getElementById('stock-message');
+        // Actualizar mensaje de stock y controles
+        function updateStockMessage(currentValue = 1) {
+            const remaining = maxStock - currentValue;
             
-            if (stockMessage) {
-                if (remaining <= 5 && remaining > 0) {
-                    stockMessage.textContent = `¡Solo quedan ${maxStock} unidades!`;
-                    stockMessage.className = 'text-yellow-600 font-medium';
-                } else if (remaining === 0) {
-                    stockMessage.textContent = '¡Última unidad disponible!';
-                    stockMessage.className = 'text-red-600 font-medium';
-                } else {
-                    stockMessage.textContent = '';
-                }
+            // Actualizar contador de stock restante
+            if (stockRemaining) {
+                stockRemaining.textContent = remaining;
             }
             
-            // Disable/enable buttons based on stock
+            // Actualizar estado de los botones
             if (incrementBtn) {
-                incrementBtn.disabled = currentQty >= maxStock;
-                incrementBtn.className = `px-3 py-2 ${currentQty >= maxStock ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-gray-100 hover:bg-gray-200'}`;
+                incrementBtn.disabled = currentValue >= maxStock;
             }
             if (decrementBtn) {
-                decrementBtn.disabled = currentQty <= 1;
-                decrementBtn.className = `px-3 py-2 ${currentQty <= 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-gray-100 hover:bg-gray-200'}`;
+                decrementBtn.disabled = currentValue <= 1;
+            }
+            
+            // Actualizar mensaje de stock bajo
+            if (stockMessage) {
+                if (remaining <= 5 && remaining > 0) {
+                    stockMessage.textContent = `¡Solo quedan ${remaining} unidades!`;
+                    stockMessage.className = 'text-sm text-rose-600 font-medium flex items-center mt-2';
+                    stockMessage.innerHTML = `<i class="fas fa-exclamation-circle mr-1.5"></i> ¡Solo quedan ${remaining} unidades!`;
+                    stockMessage.classList.remove('hidden');
+                } else if (remaining === 0) {
+                    stockMessage.innerHTML = '<i class="fas fa-exclamation-circle mr-1.5"></i> ¡Última unidad disponible!';
+                    stockMessage.className = 'text-sm text-rose-600 font-medium flex items-center mt-2';
+                    stockMessage.classList.remove('hidden');
+                } else {
+                    stockMessage.classList.add('hidden');
+                }
+            }
+            
+            // Actualizar cantidad en el formulario oculto
+            const formQuantity = document.getElementById('form-quantity');
+            if (formQuantity) {
+                formQuantity.value = currentValue;
             }
         }
         
-        // Function to update stock display
-        function updateStockDisplay() {
-            if (stockDisplay) {
-                stockDisplay.textContent = `(${maxStock} disponibles)`;
-                
-                // Update max attribute on quantity input
-                if (cantidadInput) {
-                    cantidadInput.max = maxStock;
-                    
-                    // Adjust quantity if it exceeds new stock
-                    const currentQty = parseInt(cantidadInput.value) || 0;
-                    if (currentQty > maxStock) {
-                        cantidadInput.value = maxStock;
-                    }
-                    
-                    // Update buttons state
-                    updateStockMessage();
-                }
-                
-                // Update max stock message
-                const maxStockMessage = document.getElementById('max-stock-message');
-                if (maxStockMessage) {
-                    maxStockMessage.textContent = `Máximo: ${maxStock} unidad${maxStock !== 1 ? 'es' : ''}`;
-                }
-            }
-        }
-        
-        // Submit form via AJAX
-        const form = document.getElementById('add-to-cart-form');
-        if (form) {
-            form.addEventListener('submit', function(e) {
+        // Manejar envío del formulario con AJAX
+        const addToCartForm = document.getElementById('add-to-cart-form');
+        if (addToCartForm) {
+            addToCartForm.addEventListener('submit', function(e) {
                 e.preventDefault();
-                const button = this.querySelector('button[type="submit"]');
-                const cantidad = parseInt(cantidadInput.value) || 1;
                 
-                // Disable form during submission
-                button.disabled = true;
+                const formData = new FormData(this);
+                const submitButton = this.querySelector('button[type="submit"]');
+                const originalButtonText = submitButton.innerHTML;
                 
-                fetch(this.action, {
+                // Mostrar estado de carga
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Añadiendo...';
+                
+                // Crear un objeto FormData con los datos del formulario
+                const formData = new FormData();
+                formData.append('cantidad', cantidadInput.value);
+                formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+                
+                fetch('{% url "tienda:agregar_al_carrito" producto.id %}', {
                     method: 'POST',
+                    body: formData,
                     headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                        'X-CSRFToken': '{{ csrf_token }}',
                         'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: `cantidad=${cantidad}`
+                    }
                 })
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        // Update local stock
-                        maxStock -= cantidad;
-                        updateStockDisplay();
-                        
-                        // Show success message
-                        showToast('Producto añadido al carrito', 'success');
-                        
-                        // Update cart count
-                        if (typeof updateCartCount === 'function') {
-                            updateCartCount(data.cart_count);
-                        }
-                        
-                        // Reset quantity to 1
-                        if (cantidadInput) {
-                            cantidadInput.value = 1;
-                            updateStockMessage();
+                        // Mostrar mensaje de éxito
+                        const messageDiv = document.getElementById('add-to-cart-message');
+                        if (messageDiv) {
+                            messageDiv.classList.remove('hidden');
+                            messageDiv.classList.add('flex');
+                            
+                            // Actualizar contador del carrito en el encabezado
+                            const cartCount = document.querySelector('.cart-count');
+                            if (cartCount) {
+                                cartCount.textContent = data.cart_count;
+                                cartCount.classList.remove('hidden');
+                                cartCount.classList.add('flex');
+                                
+                                // Animación del ícono del carrito
+                                cartCount.classList.add('animate-bounce');
+                                setTimeout(() => {
+                                    cartCount.classList.remove('animate-bounce');
+                                }, 1000);
+                            }
+                            
+                            // Ocultar mensaje después de 3 segundos
+                            setTimeout(() => {
+                                messageDiv.classList.add('hidden');
+                                messageDiv.classList.remove('flex');
+                            }, 3000);
+                            
+                            // Actualizar el stock mostrado
+                            if (data.stock_actualizado !== undefined) {
+                                maxStock = data.stock_actualizado;
+                                updateStockMessage(parseInt(cantidadInput.value));
+                            }
                         }
                     } else {
-                        throw new Error(data.error || 'Error al agregar al carrito');
+                        // Mostrar mensaje de error
+                        console.error('Error al agregar al carrito:', data.message);
+                        const messageDiv = document.getElementById('add-to-cart-message');
+                        if (messageDiv) {
+                            messageDiv.innerHTML = `
+                                <div class="flex items-center">
+                                    <i class="fas fa-exclamation-circle text-red-500 mr-2"></i>
+                                    <span>${data.message || 'Error al agregar al carrito'}</span>
+                                </div>
+                            `;
+                            messageDiv.classList.remove('hidden', 'bg-emerald-50', 'text-emerald-700');
+                            messageDiv.classList.add('flex', 'bg-red-50', 'text-red-700');
+                            
+                            setTimeout(() => {
+                                messageDiv.classList.add('hidden');
+                                messageDiv.classList.remove('flex');
+                                messageDiv.classList.remove('bg-red-50', 'text-red-700');
+                                messageDiv.classList.add('bg-emerald-50', 'text-emerald-700');
+                            }, 5000);
+                        }
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    showToast(error.message || 'Error al agregar al carrito', 'error');
+                    const messageDiv = document.getElementById('add-to-cart-message') || document.createElement('div');
+                    messageDiv.innerHTML = `
+                        <div class="flex items-center">
+                            <i class="fas fa-exclamation-circle text-red-500 mr-2"></i>
+                            <span>Error de conexión. Por favor, inténtalo de nuevo.</span>
+                        </div>
+                    `;
+                    messageDiv.classList.remove('hidden', 'bg-emerald-50', 'text-emerald-700');
+                    messageDiv.classList.add('flex', 'bg-red-50', 'text-red-700');
+                    
+                    setTimeout(() => {
+                        messageDiv.classList.add('hidden');
+                        messageDiv.classList.remove('flex');
+                        messageDiv.classList.remove('bg-red-50', 'text-red-700');
+                        messageDiv.classList.add('bg-emerald-50', 'text-emerald-700');
+                    }, 5000);
                 })
                 .finally(() => {
-                    button.disabled = false;
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = originalButtonText;
                 });
             });
         }
