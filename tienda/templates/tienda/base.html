@@ -124,42 +124,77 @@
                     }
 
                     searchTimeout = setTimeout(() => {
-                        fetch(`/buscar/?q=${encodeURIComponent(query)}`)
-                            .then(response => response.json())
-                            .then(data => {
-                                if (data.length > 0) {
-                                    let resultsHtml = '';
-                                    data.forEach(product => {
-                                        resultsHtml += `
-                                        <a href="${product.url}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center">
-                                            ${product.imagen ? 
-                                                `<img src="${product.imagen}" alt="${product.nombre}" class="w-10 h-10 object-cover mr-3">` : 
-                                                `<div class="w-10 h-10 bg-gray-200 flex items-center justify-center mr-3">
-                                                    <i class="fas fa-box text-gray-400"></i>
-                                                </div>`
-                                            }
-                                            <div>
-                                                <div class="font-medium">${product.nombre}</div>
-                                                <div class="text-blue-600">S/ ${product.precio}</div>
-                                            </div>
-                                        </a>`;
-                                    });
-                                    searchResults.innerHTML = resultsHtml;
-                                } else {
-                                    searchResults.innerHTML = `
-                                        <div class="py-1">
-                                            <div class="px-4 py-2 text-gray-500 text-sm">
-                                                No se encontraron productos.
-                                            </div>
-                                        </div>`;
-                                }
-                                searchResults.classList.remove('hidden');
-                            })
-                            .catch(error => {
-                                console.error('Error:', error);
-                                searchResults.classList.add('hidden');
+                    // Show loading state
+                    searchResults.innerHTML = `
+                        <div class="py-2">
+                            <div class="px-4 py-2 text-gray-500 text-sm flex items-center">
+                                <i class="fas fa-spinner fa-spin mr-2"></i> Buscando...
+                            </div>
+                        </div>`;
+                    searchResults.classList.remove('hidden');
+                    
+                    fetch(`/buscar/?q=${encodeURIComponent(query)}`, {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json'
+                        }
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Error en la búsqueda');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.productos && data.productos.length > 0) {
+                            let resultsHtml = '';
+                            data.productos.forEach(product => {
+                                resultsHtml += `
+                                <a href="${product.url}" class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 flex items-center border-b border-gray-100">
+                                    ${product.imagen ? 
+                                        `<img src="${product.imagen}" alt="${product.nombre}" class="w-10 h-10 object-cover rounded mr-3">` : 
+                                        `<div class="w-10 h-10 bg-gray-100 flex items-center justify-center rounded mr-3">
+                                            <i class="fas fa-box text-gray-400"></i>
+                                        </div>`
+                                    }
+                                    <div class="flex-1 min-w-0">
+                                        <div class="font-medium truncate">${product.nombre}</div>
+                                        <div class="text-blue-600 font-medium">S/ ${product.precio}</div>
+                                    </div>
+                                    <i class="fas fa-chevron-right text-gray-400 ml-2"></i>
+                                </a>`;
                             });
-                    }, 300); // 300ms debounce
+                            
+                            // Add view all results link if there are many results
+                            if (data.productos.length >= 5) {
+                                resultsHtml += `
+                                <a href="/buscar/?q=${encodeURIComponent(query)}" class="block px-4 py-2 text-center text-sm text-blue-600 hover:bg-gray-50 border-t border-gray-100 font-medium">
+                                    Ver todos los resultados (${data.productos.length}+)
+                                </a>`;
+                            }
+                            
+                            searchResults.innerHTML = resultsHtml;
+                        } else {
+                            searchResults.innerHTML = `
+                                <div class="py-2">
+                                    <div class="px-4 py-2 text-gray-500 text-sm">
+                                        No se encontraron productos para "${query}"
+                                    </div>
+                                </div>`;
+                        }
+                        searchResults.classList.remove('hidden');
+                    })
+                    .catch(error => {
+                        console.error('Error en la búsqueda:', error);
+                        searchResults.innerHTML = `
+                            <div class="py-2">
+                                <div class="px-4 py-2 text-red-500 text-sm">
+                                    Error al buscar. Intenta de nuevo.
+                                </div>
+                            </div>`;
+                        searchResults.classList.remove('hidden');
+                    });
+                }, 300); // 300ms debounce
                 });
 
                 // Hide results when clicking outside

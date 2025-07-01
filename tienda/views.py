@@ -201,16 +201,19 @@ def buscar_productos(request):
     query = request.GET.get('q', '').strip()
     
     if not query:
-        return render(request, 'tienda/buscar_productos.html', {'productos': []})
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'productos': []})
+        return render(request, 'tienda/buscar_productos.html', {'productos': [], 'query': query})
     
+    # Search in both name and description
     productos = Producto.objects.filter(
         Q(nombre__icontains=query) |
         Q(descripcion__icontains=query),
         disponible=True
-    )
+    ).order_by('nombre')
     
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        # Return JSON response for AJAX requests
+        # Return JSON response for AJAX requests (search dropdown)
         results = []
         for producto in productos[:5]:  # Limit to 5 results for dropdown
             results.append({
@@ -221,12 +224,12 @@ def buscar_productos(request):
                 'url': producto.get_absolute_url()
             })
         return JsonResponse({'productos': results})
-    else:
-        productos = Producto.objects.none()
     
+    # For regular search page
     context = {
         'productos': productos,
-        'query': query
+        'query': query,
+        'resultados_encontrados': productos.exists()
     }
     
     return render(request, 'tienda/buscar_productos.html', context)
