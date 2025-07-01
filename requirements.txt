@@ -6,18 +6,6 @@ psycopg2-binary==2.9.9
 dj-database-url==2.1.0
 python-dotenv==1.0.1
 Pillow==10.2.0
-conda-token @ file:///croot/conda-token_1741722942912/work
-conda_index @ file:///C:/b/abs_45v3w98im_/croot/conda-index_1719338245731/work
-conda_package_streaming @ file:///C:/b/abs_fe6zb0_j8_/croot/conda-package-streaming_1718136098642/work
-constantly @ file:///C:/b/abs_cbuavw4443/croot/constantly_1703165617403/work
-contourpy @ file:///C:/Users/dev-admin/perseverance-python-buildout/croot/contourpy_1701817388761/work
-cookiecutter @ file:///C:/b/abs_66untpu1ub/croot/cookiecutter_1711059869779/work
-cryptography @ file:///C:/b/abs_35g500qir4/croot/cryptography_1724940575116/work
-cssselect @ file:///C:/b/abs_71gnjab7b0/croot/cssselect_1707339955530/work
-cycler @ file:///tmp/build/80754af9/cycler_1637851556182/work
-cytoolz @ file:///C:/b/abs_d43s8lnb60/croot/cytoolz_1701723636699/work
-dask @ file:///C:/b/abs_12bk4i_z1j/croot/dask-core_1725464350376/work
-dask-expr @ file:///C:/b/abs_d8e1rqubql/croot/dask-expr_1725523012670/work
 datashader @ file:///C:/b/abs_37m05texdf/croot/datashader_1720534925330/work
 debugpy @ file:///C:/Users/dev-admin/perseverance-python-buildout/croot/debugpy_1699554994633/work
 decorator @ file:///opt/conda/conda-bld/decorator_1643638310831/work
