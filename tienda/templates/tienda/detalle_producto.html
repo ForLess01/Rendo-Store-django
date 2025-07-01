@@ -240,21 +240,52 @@
         const cantidadInput = document.getElementById('cantidad');
         const incrementBtn = document.getElementById('increment');
         const decrementBtn = document.getElementById('decrement');
-        const stockRemaining = document.getElementById('stock-remaining');
         const maxStock = {{ producto.stock|default:0 }};
-        const stockMessage = document.getElementById('stock-message');
         
-        // Inicializar el mensaje de stock
-        updateStockMessage();
+        // Función para actualizar el valor del input y el formulario oculto
+        function updateQuantity(newValue) {
+            // Asegurarse de que el valor esté dentro de los límites
+            newValue = parseInt(newValue) || 1;
+            if (newValue < 1) newValue = 1;
+            if (newValue > maxStock) newValue = maxStock;
+            
+            // Actualizar el input visible
+            cantidadInput.value = newValue;
+            
+            // Actualizar el input oculto del formulario
+            const formQuantity = document.getElementById('form-quantity');
+            if (formQuantity) {
+                formQuantity.value = newValue;
+            }
+            
+            // Actualizar estado de los botones
+            updateButtonStates(newValue);
+            
+            // Actualizar mensaje de stock
+            updateStockMessage(newValue);
+        }
+        
+        // Función para actualizar el estado de los botones
+        function updateButtonStates(currentValue) {
+            if (decrementBtn) {
+                decrementBtn.disabled = currentValue <= 1;
+                decrementBtn.classList.toggle('opacity-50', currentValue <= 1);
+                decrementBtn.classList.toggle('cursor-not-allowed', currentValue <= 1);
+            }
+            
+            if (incrementBtn) {
+                incrementBtn.disabled = currentValue >= maxStock;
+                incrementBtn.classList.toggle('opacity-50', currentValue >= maxStock);
+                incrementBtn.classList.toggle('cursor-not-allowed', currentValue >= maxStock);
+            }
+        }
         
         // Manejar el botón de incrementar
         if (incrementBtn) {
             incrementBtn.addEventListener('click', function() {
                 let value = parseInt(cantidadInput.value) || 1;
                 if (value < maxStock) {
-                    value++;
-                    cantidadInput.value = value;
-                    updateStockMessage(value);
+                    updateQuantity(value + 1);
                 }
             });
         }
@@ -264,9 +295,7 @@
             decrementBtn.addEventListener('click', function() {
                 let value = parseInt(cantidadInput.value) || 1;
                 if (value > 1) {
-                    value--;
-                    cantidadInput.value = value;
-                    updateStockMessage(value);
+                    updateQuantity(value - 1);
                 }
             });
         }
@@ -274,12 +303,45 @@
         // Manejar entrada manual
         if (cantidadInput) {
             cantidadInput.addEventListener('change', function() {
-                let value = parseInt(this.value) || 1;
-                if (value < 1) value = 1;
-                if (value > maxStock) value = maxStock;
-                this.value = value;
-                updateStockMessage(value);
+                updateQuantity(this.value);
             });
+            
+            // También actualizar en tiempo real mientras se escribe
+            cantidadInput.addEventListener('input', function() {
+                const value = parseInt(this.value) || 1;
+                if (value > 0) {
+                    updateQuantity(value);
+                }
+            });
+        }
+        
+        // Inicializar el estado de los botones
+        updateButtonStates(parseInt(cantidadInput.value) || 1);
+        
+        // Función para actualizar el mensaje de stock
+        function updateStockMessage(currentValue) {
+            const remaining = maxStock - currentValue;
+            const stockMessage = document.getElementById('stock-message');
+            
+            if (stockMessage) {
+                if (remaining <= 5 && remaining > 0) {
+                    stockMessage.innerHTML = `
+                        <i class="fas fa-exclamation-circle mr-1.5"></i>
+                        ¡Solo quedan ${remaining} unidades!
+                    `;
+                    stockMessage.className = 'text-sm text-rose-600 font-medium flex items-center mt-2';
+                    stockMessage.classList.remove('hidden');
+                } else if (remaining === 0) {
+                    stockMessage.innerHTML = `
+                        <i class="fas fa-exclamation-circle mr-1.5"></i>
+                        ¡Última unidad disponible!
+                    `;
+                    stockMessage.className = 'text-sm text-rose-600 font-medium flex items-center mt-2';
+                    stockMessage.classList.remove('hidden');
+                } else {
+                    stockMessage.classList.add('hidden');
+                }
+            }
         }
         
         // Actualizar mensaje de stock y controles
