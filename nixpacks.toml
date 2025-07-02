@@ -12,7 +12,9 @@ nixPkgs = [
     'libjpeg',
     'libpqxx',
     'openssl',
-    'pkg-config'
+    'pkg-config',
+    'nodejs_20', # Instalar Node.js
+    'npm'        # Instalar npm
 ]
 
 [phases.install]
@@ -21,22 +23,17 @@ cmds = [
     "python -m venv /app/venv",
     # Usar pip del entorno virtual
     "/app/venv/bin/pip install --upgrade pip setuptools wheel",
-    # Instalar dependencias de requirements.txt
+    # Instalar dependencias de Python
     "/app/venv/bin/pip install -r requirements.txt --no-cache-dir",
-    # Instalar Tailwind y sus dependencias
-    "/app/venv/bin/python -m pip install nodeenv",
-    "/app/venv/bin/nodeenv -p",
-    "/app/venv/bin/npm install -g npm@latest",
-    "/app/venv/bin/npm install -g tailwindcss postcss autoprefixer",
-    # Verificar instalación
+    # Actualizar npm a la última versión
+    "npm install -g npm@latest",
+    # Verificar instalación de Django
     "/app/venv/bin/python -c \"import django; print(f'Django version: {django.__version__}')\""
 ]
 
 [phases.build]
 cmds = [
-    # Instalar dependencias de Node.js
-    "/app/venv/bin/npm install",
-    # Construir archivos estáticos
+    # Instalar y construir dependencias de Tailwind
     "/app/venv/bin/python manage.py tailwind install",
     "/app/venv/bin/python manage.py tailwind build",
     # Recolectar archivos estáticos
