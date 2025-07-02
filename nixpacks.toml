@@ -41,3 +41,6 @@ cmds = [
     # Recolectar archivos estáticos
     "/app/venv/bin/python manage.py collectstatic --noinput --clear"
 ]
+
+[start]
+cmd = "/app/venv/bin/python -m gunicorn myproject.wsgi --log-file - --bind 0.0.0.0:$PORT"
