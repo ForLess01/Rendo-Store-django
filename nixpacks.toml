@@ -1,19 +1,38 @@
 [phases.setup]
-nixPkgs = ['python310', 'python310Packages.pip', 'python310Packages.virtualenv', 'postgresql']
+nixPkgs = [
+    'python310',
+    'python310Packages.pip',
+    'python310Packages.virtualenv',
+    'postgresql',
+    'gcc',
+    'libffi',
+    'zlib',
+    'libjpeg',
+    'libpqxx',
+    'openssl',
+    'pkg-config'
+]
 
 [phases.install]
 cmds = [
-    "python -m venv /app/venv",
-    ". /app/venv/bin/activate",
-    "pip install --upgrade pip",
-    "pip install -r requirements.txt"
+    # Crear un entorno virtual con --system-site-packages para acceder a paquetes de Nix
+    "python -m venv --system-site-packages /app/venv",
+    # Usar pip del entorno virtual directamente
+    "/app/venv/bin/pip install --upgrade pip setuptools wheel",
+    "/app/venv/bin/pip install -r requirements.txt"
 ]
 
 [phases.build]
 cmds = [
-    ". /app/venv/bin/activate",
-    "python manage.py collectstatic --noinput"
+    "/app/venv/bin/python manage.py collectstatic --noinput"
 ]
 
 [start]
-cmd = ". /app/venv/bin/activate && gunicorn myproject.wsgi --log-file -"
+cmd = "/app/venv/bin/gunicorn myproject.wsgi --log-file -"
+
+[build.args]
+PYTHONUNBUFFERED = "1"
+PYTHONPATH = "/app"
+
+[build.environment]
+NIXPKGS_ALLOW_UNFREE = "1"
