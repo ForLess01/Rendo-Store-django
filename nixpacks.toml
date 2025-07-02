@@ -13,7 +13,7 @@ nixPkgs = [
     'libpqxx',
     'openssl',
     'pkg-config',
-    'nodejs_20' # Node.js (incluye npm)
+    'nodejs_20'
 ]
 
 [phases.install]
@@ -24,8 +24,6 @@ cmds = [
     "/app/venv/bin/pip install --upgrade pip setuptools wheel",
     # Instalar dependencias de Python
     "/app/venv/bin/pip install -r requirements.txt --no-cache-dir",
-    # Actualizar npm a la última versión
-    "npm install -g npm@latest",
     # Verificar instalación de Django
     "/app/venv/bin/python -c \"import django; print(f'Django version: {django.__version__}')\""
 ]
@@ -34,12 +32,12 @@ cmds = [
 cmds = [
     # Crear directorio estático si no existe
     "mkdir -p /app/static",
-    # Instalar dependencias de Node.js directamente en la app 'theme'
-    "npm install --prefix theme",
-    # Crear el directorio de salida para el CSS de Tailwind
-    "mkdir -p ./theme/static/css",
-    # Construir el CSS de Tailwind usando npx
-    "npx tailwindcss -i ./theme/static/src/input.css -o ./theme/static/css/tailwind.css --minify",
+    # Cambiar al directorio de la app theme para instalar dependencias
+    "cd theme/static_src && npm install",
+    # Usar Django Tailwind para instalar dependencias (alternativo)
+    "/app/venv/bin/python manage.py tailwind install --no-input || echo 'Tailwind install failed, trying manual approach'",
+    # Construir Tailwind CSS usando Django
+    "/app/venv/bin/python manage.py tailwind build || (cd theme/static_src && npm run build)",
     # Recolectar archivos estáticos
     "/app/venv/bin/python manage.py collectstatic --noinput --clear"
 ]

@@ -67,20 +67,59 @@ INSTALLED_APPS = [
 
 # Configuración de Tailwind
 TAILWIND_APP_NAME = 'theme'
-INTERNAL_IPS = [
-    "127.0.0.1",
-]
 
-MIDDLEWARE = [
-    "django.middleware.security.SecurityMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware",  # Para servir archivos estáticos
-    "django.contrib.sessions.middleware.SessionMiddleware",
-    "django.middleware.common.CommonMiddleware",
-    "django.middleware.csrf.CsrfViewMiddleware",
-    "django.contrib.auth.middleware.AuthenticationMiddleware",
-    "django.contrib.messages.middleware.MessageMiddleware",
-    "django.middleware.clickjacking.XFrameOptionsMiddleware",
-]
+# Configuración de NPM - ajusta según tu sistema
+import shutil
+
+# Detectar automáticamente la ruta de npm
+NPM_BIN_PATH = shutil.which('npm')
+
+# Si la detección automática falla, especifica manualmente:
+if not NPM_BIN_PATH:
+    # Rutas comunes según el sistema operativo
+    import platform
+    if platform.system() == 'Windows':
+        # Rutas típicas en Windows
+        NPM_BIN_PATH = r'C:\Program Files\nodejs\npm.cmd'
+        if not os.path.exists(NPM_BIN_PATH):
+            NPM_BIN_PATH = r'C:\Users\{}\AppData\Roaming\npm\npm.cmd'.format(os.getenv('USERNAME'))
+    else:
+        # Rutas típicas en Linux/Mac
+        NPM_BIN_PATH = '/usr/local/bin/npm'
+        if not os.path.exists(NPM_BIN_PATH):
+            NPM_BIN_PATH = '/usr/bin/npm'
+
+if DEBUG:
+    INTERNAL_IPS = [
+        "127.0.0.1",
+    ]
+    # Solo agregar browser reload en desarrollo
+    INSTALLED_APPS.append('django_browser_reload')
+    
+    # Middleware para development
+    MIDDLEWARE = [
+        "django.middleware.security.SecurityMiddleware",
+        "whitenoise.middleware.WhiteNoiseMiddleware",
+        "django_browser_reload.middleware.BrowserReloadMiddleware",  # Solo en dev
+        "django.contrib.sessions.middleware.SessionMiddleware",
+        "django.middleware.common.CommonMiddleware",
+        "django.middleware.csrf.CsrfViewMiddleware",
+        "django.contrib.auth.middleware.AuthenticationMiddleware",
+        "django.contrib.messages.middleware.MessageMiddleware",
+        "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    ]
+else:
+    # Middleware para producción (sin browser reload)
+    MIDDLEWARE = [
+        "django.middleware.security.SecurityMiddleware",
+        "whitenoise.middleware.WhiteNoiseMiddleware",
+        "django.contrib.sessions.middleware.SessionMiddleware",
+        "django.middleware.common.CommonMiddleware",
+        "django.middleware.csrf.CsrfViewMiddleware",
+        "django.contrib.auth.middleware.AuthenticationMiddleware",
+        "django.contrib.messages.middleware.MessageMiddleware",
+        "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    ]
 
 ROOT_URLCONF = "myproject.urls"
 
@@ -170,16 +209,6 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 # Media files
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-
-# Configuración para almacenamiento en la nube (opcional, para producción)
-# Ejemplo para AWS S3 (descomentar y configurar si es necesario)
-# DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-# AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
-# AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
-# AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME')
-# AWS_S3_REGION_NAME = os.getenv('AWS_S3_REGION_NAME')
-# AWS_DEFAULT_ACL = 'public-read'
-# AWS_QUERYSTRING_AUTH = False
 
 # Authentication
 LOGIN_REDIRECT_URL = 'tienda:lista_productos'

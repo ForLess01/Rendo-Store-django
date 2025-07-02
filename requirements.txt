@@ -19,7 +19,7 @@ Pillow==10.2.0
 djangorestframework==3.16.0
 
 # Tailwind CSS
-django-tailwind==4.0.1
+django-tailwind==3.8.0
 
-# Development tools
+# Development tools (se instala condicionalmente)
 django-browser-reload==1.18.0
