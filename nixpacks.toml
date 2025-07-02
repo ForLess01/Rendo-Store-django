@@ -12,11 +12,7 @@ nixPkgs = [
     'libjpeg',
     'libpqxx',
     'openssl',
-    'pkg-config',
-    'postgresql.lib',
-    'zlib.dev',
-    'libjpeg.dev',
-    'libpqxx.dev'
+    'pkg-config'
 ]
 
 [phases.install]
@@ -25,9 +21,11 @@ cmds = [
     "python -m venv /app/venv",
     # Usar pip del entorno virtual
     "/app/venv/bin/pip install --upgrade pip setuptools wheel",
-    # Instalar dependencias directamente con pip
+    # Instalar dependencias básicas primero
+    "/app/venv/bin/pip install Django==5.2.3 gunicorn==21.2.0",
+    # Instalar el resto de dependencias
     "/app/venv/bin/pip install -r requirements.txt --no-cache-dir",
-    # Verificar instalación de Django
+    # Verificar instalación
     "/app/venv/bin/python -c \"import django; print(f'Django version: {django.__version__}')\""
 ]
 
