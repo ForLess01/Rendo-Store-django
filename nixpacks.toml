@@ -1,14 +1,19 @@
 [phases.setup]
-nixPkgs = ['python310', 'python310Packages.pip', 'python310Packages.virtualenv']
+nixPkgs = ['python310', 'python310Packages.pip', 'python310Packages.virtualenv', 'postgresql']
 
 [phases.install]
 cmds = [
-    "pip install -r requirements.txt",
-    "python manage.py collectstatic --noinput"
+    "python -m venv /app/venv",
+    ". /app/venv/bin/activate",
+    "pip install --upgrade pip",
+    "pip install -r requirements.txt"
 ]
 
 [phases.build]
-cmds = []
+cmds = [
+    ". /app/venv/bin/activate",
+    "python manage.py collectstatic --noinput"
+]
 
 [start]
-cmd = "gunicorn myproject.wsgi --log-file -"
+cmd = ". /app/venv/bin/activate && gunicorn myproject.wsgi --log-file -"
