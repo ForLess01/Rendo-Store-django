@@ -3,7 +3,7 @@ nixPkgs = [
     'python310',
     'python310Packages.pip',
     'python310Packages.virtualenv',
-    'python310Packages.gunicorn',  # Asegurando que Gunicorn esté disponible
+    'python310Packages.gunicorn',
     'postgresql',
     'gcc',
     'libffi',
@@ -16,20 +16,20 @@ nixPkgs = [
 
 [phases.install]
 cmds = [
-    # Crear un entorno virtual con --system-site-packages para acceder a paquetes de Nix
-    "python -m venv --system-site-packages /app/venv",
-    # Usar pip del entorno virtual directamente
-    "/app/venv/bin/pip install --upgrade pip setuptools wheel",
-    "/app/venv/bin/pip install -r requirements.txt"
+    # Crear entorno virtual
+    "python -m venv /app/venv",
+    # Instalar dependencias directamente con pip del sistema
+    "pip install --upgrade pip setuptools wheel",
+    "pip install -r requirements.txt"
 ]
 
 [phases.build]
 cmds = [
-    "/app/venv/bin/python manage.py collectstatic --noinput"
+    "python manage.py collectstatic --noinput"
 ]
 
 [start]
-cmd = "/app/venv/bin/python -m gunicorn myproject.wsgi --log-file -"
+cmd = "gunicorn myproject.wsgi --log-file -"
 
 [build.args]
 PYTHONUNBUFFERED = "1"
@@ -37,3 +37,4 @@ PYTHONPATH = "/app"
 
 [build.environment]
 NIXPKGS_ALLOW_UNFREE = "1"
+PYTHONPATH = "/app"
