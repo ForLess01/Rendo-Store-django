@@ -3,7 +3,8 @@ nixPkgs = [
     'python310',
     'python310Packages.pip',
     'python310Packages.virtualenv',
-    'python310Packages.gunicorn',  # Asegurar que Gunicorn esté disponible
+    'python310Packages.setuptools',
+    'python310Packages.wheel',
     'postgresql',
     'gcc',
     'libffi',
@@ -11,7 +12,11 @@ nixPkgs = [
     'libjpeg',
     'libpqxx',
     'openssl',
-    'pkg-config'
+    'pkg-config',
+    'postgresql.lib',
+    'zlib.dev',
+    'libjpeg.dev',
+    'libpqxx.dev'
 ]
 
 [phases.install]
@@ -21,7 +26,9 @@ cmds = [
     # Usar pip del entorno virtual
     "/app/venv/bin/pip install --upgrade pip setuptools wheel",
     # Instalar dependencias directamente con pip
-    "/app/venv/bin/pip install -r requirements.txt"
+    "/app/venv/bin/pip install -r requirements.txt --no-cache-dir",
+    # Verificar instalación de Django
+    "/app/venv/bin/python -c \"import django; print(f'Django version: {django.__version__}')\""
 ]
 
 [phases.build]
@@ -40,3 +47,6 @@ PYTHONPATH = "/app"
 PYTHONUNBUFFERED = "1"
 PYTHONPATH = "/app"
 NIXPKGS_ALLOW_UNFREE = "1"
+PYTHONDONTWRITEBYTECODE = "1"
+PYTHONHASHSEED = "random"
+PYTHONFAULTHANDLER = "1"
