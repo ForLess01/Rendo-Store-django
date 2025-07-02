@@ -13,8 +13,7 @@ nixPkgs = [
     'libpqxx',
     'openssl',
     'pkg-config',
-    'nodejs_20', # Instalar Node.js
-    'npm'        # Instalar npm
+    'nodejs_20' # Node.js (incluye npm)
 ]
 
 [phases.install]
