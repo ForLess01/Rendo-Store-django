@@ -3,6 +3,7 @@ nixPkgs = [
     'python310',
     'python310Packages.pip',
     'python310Packages.virtualenv',
+    'python310Packages.gunicorn',  # Asegurar que Gunicorn esté disponible
     'postgresql',
     'gcc',
     'libffi',
@@ -29,7 +30,7 @@ cmds = [
 ]
 
 [start]
-cmd = "/app/venv/bin/gunicorn myproject.wsgi --log-file - --bind 0.0.0.0:$PORT"
+cmd = "/app/venv/bin/python -m gunicorn myproject.wsgi --log-file - --bind 0.0.0.0:$PORT"
 
 [build.args]
 PYTHONUNBUFFERED = "1"

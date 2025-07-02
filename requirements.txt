@@ -1,6 +1,6 @@
 # Core
 Django==5.2.3
-gunicorn==21.2.0
+gunicorn==21.2.0  # Asegurarse de que esta versión sea compatible con Python 3.10
 
 # Database
 psycopg2-binary==2.9.9
