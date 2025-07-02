@@ -1,1 +1,1 @@
-web: /app/venv/bin/python -m gunicorn myproject.wsgi --log-file - --bind 0.0.0.0:$PORT
+web: python -m gunicorn myproject.wsgi --log-file - --bind 0.0.0.0:$PORT
