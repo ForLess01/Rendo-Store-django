@@ -36,22 +36,10 @@ cmds = [
     "mkdir -p /app/static",
     # Instalar dependencias de Node.js directamente en la app 'theme'
     "npm install --prefix theme",
-    "/app/venv/bin/python manage.py tailwind build",
+    # Crear el directorio de salida para el CSS de Tailwind
+    "mkdir -p ./theme/static/css",
+    # Construir el CSS de Tailwind usando npx
+    "npx tailwindcss -i ./theme/static/src/input.css -o ./theme/static/css/tailwind.css --minify",
     # Recolectar archivos estáticos
     "/app/venv/bin/python manage.py collectstatic --noinput --clear"
 ]
-
-[start]
-cmd = "/app/venv/bin/python -m gunicorn myproject.wsgi --log-file - --bind 0.0.0.0:$PORT"
-
-[build.args]
-PYTHONUNBUFFERED = "1"
-PYTHONPATH = "/app"
-
-[build.environment]
-PYTHONUNBUFFERED = "1"
-PYTHONPATH = "/app"
-NIXPKGS_ALLOW_UNFREE = "1"
-PYTHONDONTWRITEBYTECODE = "1"
-PYTHONHASHSEED = "random"
-PYTHONFAULTHANDLER = "1"
