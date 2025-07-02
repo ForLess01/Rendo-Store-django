@@ -11,6 +11,9 @@ nixPkgs = [
     'python310Packages.dj-database-url',
     'python310Packages.python-dotenv',
     'python310Packages.pillow',
+    # Dependencias de desarrollo
+    'python310Packages.django-browser-reload',
+    'python310Packages.django-tailwind',
     'postgresql',
     'gcc',
     'libffi',
@@ -28,7 +31,8 @@ cmds = [
     # Usar pip del entorno virtual
     "/app/venv/bin/pip install --upgrade pip setuptools wheel",
     # Instalar dependencias sin sus dependencias (ya instaladas por Nix)
-    "/app/venv/bin/pip install --no-deps -r requirements.txt"
+    # y sin ejecutar tests para evitar problemas con websockets
+    "NIXPKGS_ALLOW_UNFREE=1 PIP_NO_DEPS=1 /app/venv/bin/pip install --no-deps -r requirements.txt"
 ]
 
 [phases.build]
@@ -44,5 +48,12 @@ PYTHONUNBUFFERED = "1"
 PYTHONPATH = "/app"
 
 [build.environment]
+# Permitir paquetes no libres
 NIXPKGS_ALLOW_UNFREE = "1"
+# Evitar la ejecución de tests durante la instalación
+PYTHONDONTWRITEBYTECODE = "1"
+PYTHONUNBUFFERED = "1"
 PYTHONPATH = "/app"
+# Deshabilitar compilación de extensiones opcionales
+CFLAGS = "-O0"
+LDFLAGS = "-s"
