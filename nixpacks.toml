@@ -34,8 +34,8 @@ cmds = [
 cmds = [
     # Crear directorio estático si no existe
     "mkdir -p /app/static",
-    # Instalar y construir dependencias de Tailwind
-    "/app/venv/bin/python manage.py tailwind install",
+    # Instalar dependencias de Node.js directamente en la app 'theme'
+    "npm install --prefix theme",
     "/app/venv/bin/python manage.py tailwind build",
     # Recolectar archivos estáticos
     "/app/venv/bin/python manage.py collectstatic --noinput --clear"
