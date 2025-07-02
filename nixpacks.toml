@@ -2,7 +2,6 @@
 nixPkgs = [
     'python310',
     'python310Packages.pip',
-    'python310Packages.virtualenv',
     'python310Packages.setuptools',
     'python310Packages.wheel',
     'postgresql',
@@ -18,14 +17,11 @@ nixPkgs = [
 
 [phases.install]
 cmds = [
-    # Crear entorno virtual
-    "python -m venv /app/venv",
-    # Usar pip del entorno virtual
-    "/app/venv/bin/pip install --upgrade pip setuptools wheel",
-    # Instalar dependencias de Python
-    "/app/venv/bin/pip install -r requirements.txt --no-cache-dir",
+    # Instalar dependencias directamente sin venv
+    "pip install --upgrade pip setuptools wheel",
+    "pip install -r requirements.txt --no-cache-dir",
     # Verificar instalación de Django
-    "/app/venv/bin/python -c \"import django; print(f'Django version: {django.__version__}')\""
+    "python -c \"import django; print(f'Django version: {django.__version__}')\""
 ]
 
 [phases.build]
@@ -34,13 +30,10 @@ cmds = [
     "mkdir -p /app/static",
     # Cambiar al directorio de la app theme para instalar dependencias
     "cd theme/static_src && npm install",
-    # Usar Django Tailwind para instalar dependencias (alternativo)
-    "/app/venv/bin/python manage.py tailwind install --no-input || echo 'Tailwind install failed, trying manual approach'",
+    # Usar Django Tailwind para instalar dependencias
+    "python manage.py tailwind install --no-input || echo 'Tailwind install failed, trying manual approach'",
     # Construir Tailwind CSS usando Django
-    "/app/venv/bin/python manage.py tailwind build || (cd theme/static_src && npm run build)",
+    "python manage.py tailwind build || (cd theme/static_src && npm run build)",
     # Recolectar archivos estáticos
-    "/app/venv/bin/python manage.py collectstatic --noinput --clear"
+    "python manage.py collectstatic --noinput --clear"
 ]
-
-[start]
-cmd = "/app/venv/bin/python -m gunicorn myproject.wsgi --log-file - --bind 0.0.0.0:$PORT"
