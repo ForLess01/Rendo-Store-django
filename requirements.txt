@@ -14,3 +14,12 @@ python-dotenv==1.0.1
 
 # Media processing
 Pillow==10.2.0
+
+# Development tools
+django-browser-reload==1.18.0
+
+# Frontend
+django-tailwind==4.0.1
+
+# REST Framework
+djangorestframework==3.16.0
